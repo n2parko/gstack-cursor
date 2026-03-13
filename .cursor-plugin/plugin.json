@@ -18,12 +18,5 @@
     "automation",
     "playwright"
   ],
-  "skills": [
-    "browse",
-    "plan-ceo-review",
-    "plan-eng-review",
-    "review",
-    "ship",
-    "retro"
-  ]
+  "skills": "./skills/"
 }

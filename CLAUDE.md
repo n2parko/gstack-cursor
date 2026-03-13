@@ -17,13 +17,14 @@ gstack/
 │   ├── src/         # CLI + server + commands
 │   ├── test/        # Integration tests + fixtures
 │   └── dist/        # Compiled binary
-├── ship/            # Ship workflow skill
-├── review/          # PR review skill
-├── plan-ceo-review/ # /plan-ceo-review skill
-├── plan-eng-review/ # /plan-eng-review skill
-├── retro/           # Retrospective skill
+├── skills/
+│   ├── browse/          # /browse skill prompt
+│   ├── ship/            # /ship skill
+│   ├── review/          # /review skill
+│   ├── plan-ceo-review/ # /plan-ceo-review skill
+│   ├── plan-eng-review/ # /plan-eng-review skill
+│   └── retro/           # /retro skill
 ├── setup            # One-time setup: build binary + symlink skills
-├── SKILL.md         # Browse skill (Claude discovers this)
 └── package.json     # Build scripts for browse
 ```
 

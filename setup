@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gstack setup — build browser binary + register all skills with Claude Code
+# gstack setup — build browser binary + register plugin skills with Claude Code
 set -e
 
 GSTACK_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -36,15 +36,13 @@ fi
 SKILLS_BASENAME="$(basename "$SKILLS_DIR")"
 if [ "$SKILLS_BASENAME" = "skills" ]; then
   linked=()
-  for skill_dir in "$GSTACK_DIR"/*/; do
+  for skill_dir in "$GSTACK_DIR"/skills/*/; do
     if [ -f "$skill_dir/SKILL.md" ]; then
       skill_name="$(basename "$skill_dir")"
-      # Skip node_modules
-      [ "$skill_name" = "node_modules" ] && continue
       target="$SKILLS_DIR/$skill_name"
       # Create or update symlink; skip if a real file/directory exists
       if [ -L "$target" ] || [ ! -e "$target" ]; then
-        ln -snf "gstack/$skill_name" "$target"
+        ln -snf "gstack/skills/$skill_name" "$target"
         linked+=("$skill_name")
       fi
     fi

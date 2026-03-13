@@ -80,7 +80,7 @@ This is not a prompt pack for beginners. It is an operating system for people wh
 
 ### Cursor plugin (recommended)
 
-This repo now includes a root `.cursor-plugin/plugin.json`, so Cursor can install it as a single-plugin repository.
+This repo now includes a root `.cursor-plugin/plugin.json`, so Cursor can install it as a single-plugin repository. The plugin skills live under `skills/<skill-name>/SKILL.md`, which matches Cursor's default plugin layout.
 
 For local development, clone it into Cursor's local plugin directory and run setup once:
 
@@ -107,7 +107,8 @@ cd ~/.claude/skills/gstack
 ### What gets installed
 
 - Cursor plugin manifest at `.cursor-plugin/plugin.json`
-- Skill directories at `browse/`, `plan-ceo-review/`, `plan-eng-review/`, `review/`, `ship/`, and `retro/`
+- Skill directories at `skills/browse/`, `skills/plan-ceo-review/`, `skills/plan-eng-review/`, `skills/review/`, `skills/ship/`, and `skills/retro/`
+- Browser implementation at `browse/`
 - Browser binary at `browse/dist/browse` (~58MB, gitignored)
 - `node_modules/` (gitignored)
 - `/retro` saves JSON snapshots to `.context/retros/` in your project for trend tracking
