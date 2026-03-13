@@ -21,6 +21,10 @@ let testServer: ReturnType<typeof startTestServer>;
 let bm: BrowserManager;
 let baseUrl: string;
 
+function makeRepoTempDir(prefix: string): string {
+  return fs.mkdtempSync(path.join(process.cwd(), prefix));
+}
+
 beforeAll(async () => {
   testServer = startTestServer(0);
   baseUrl = testServer.url;
@@ -306,18 +310,20 @@ describe('Performance', () => {
 describe('Visual', () => {
   test('screenshot saves file', async () => {
     await handleWriteCommand('goto', [baseUrl + '/basic.html'], bm);
-    const screenshotPath = '/tmp/browse-test-screenshot.png';
+    const tempDir = makeRepoTempDir('.tmp-browse-test-');
+    const screenshotPath = path.join(tempDir, 'screenshot.png');
     const result = await handleMetaCommand('screenshot', [screenshotPath], bm, async () => {});
     expect(result).toContain('Screenshot saved');
     expect(fs.existsSync(screenshotPath)).toBe(true);
     const stat = fs.statSync(screenshotPath);
     expect(stat.size).toBeGreaterThan(1000);
-    fs.unlinkSync(screenshotPath);
+    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   test('responsive saves 3 screenshots', async () => {
     await handleWriteCommand('goto', [baseUrl + '/responsive.html'], bm);
-    const prefix = '/tmp/browse-test-resp';
+    const tempDir = makeRepoTempDir('.tmp-browse-responsive-');
+    const prefix = path.join(tempDir, 'browse-test-resp');
     const result = await handleMetaCommand('responsive', [prefix], bm, async () => {});
     expect(result).toContain('mobile');
     expect(result).toContain('tablet');
@@ -327,10 +333,7 @@ describe('Visual', () => {
     expect(fs.existsSync(`${prefix}-tablet.png`)).toBe(true);
     expect(fs.existsSync(`${prefix}-desktop.png`)).toBe(true);
 
-    // Cleanup
-    fs.unlinkSync(`${prefix}-mobile.png`);
-    fs.unlinkSync(`${prefix}-tablet.png`);
-    fs.unlinkSync(`${prefix}-desktop.png`);
+    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 });
 
@@ -437,6 +440,25 @@ describe('CLI server script resolution', () => {
       { HOME: path.join(root, 'empty-home') },
       '$bunfs/root',
       execPath
+    );
+
+    expect(resolved).toBe(serverPath);
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test('falls back to Cursor local plugin install path', () => {
+    const root = fs.mkdtempSync('/tmp/gstack-cli-home-');
+    const home = path.join(root, 'home');
+    const serverPath = path.join(home, '.cursor/plugins/local/gstack/browse/src/server.ts');
+
+    fs.mkdirSync(path.dirname(serverPath), { recursive: true });
+    fs.writeFileSync(serverPath, '// test server\n');
+
+    const resolved = resolveServerScript(
+      { HOME: home },
+      '$bunfs/root',
+      path.join(root, 'missing', 'browse')
     );
 
     expect(resolved).toBe(serverPath);

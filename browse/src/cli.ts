@@ -45,8 +45,14 @@ export function resolveServerScript(
     }
   }
 
-  // Legacy fallback for user-level installs
-  return path.resolve(env.HOME || '/tmp', '.claude/skills/gstack/browse/src/server.ts');
+  const home = env.HOME || '/tmp';
+  const cursorLocal = path.resolve(home, '.cursor/plugins/local/gstack/browse/src/server.ts');
+  if (fs.existsSync(cursorLocal)) {
+    return cursorLocal;
+  }
+
+  // Legacy fallback for user-level Claude installs
+  return path.resolve(home, '.claude/skills/gstack/browse/src/server.ts');
 }
 
 const SERVER_SCRIPT = resolveServerScript();

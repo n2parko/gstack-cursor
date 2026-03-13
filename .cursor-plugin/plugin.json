@@ -1,0 +1,29 @@
+{
+  "name": "gstack",
+  "version": "1.0.0",
+  "description": "High-rigor planning, review, shipping, retrospective, and browser automation workflows for Cursor.",
+  "author": {
+    "name": "Garry Tan"
+  },
+  "homepage": "https://github.com/garrytan/gstack",
+  "repository": "https://github.com/garrytan/gstack",
+  "license": "MIT",
+  "keywords": [
+    "cursor",
+    "plugin",
+    "skills",
+    "review",
+    "planning",
+    "browser",
+    "automation",
+    "playwright"
+  ],
+  "skills": [
+    "browse",
+    "plan-ceo-review",
+    "plan-eng-review",
+    "review",
+    "ship",
+    "retro"
+  ]
+}

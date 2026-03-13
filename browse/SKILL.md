@@ -2,7 +2,7 @@
 name: browse
 version: 1.0.0
 description: |
-  Fast web browsing for Claude Code via persistent headless Chromium daemon. Navigate to any URL,
+  Fast web browsing for Cursor or Claude Code via persistent headless Chromium daemon. Navigate to any URL,
   read page content, click elements, fill forms, run JavaScript, take screenshots,
   inspect CSS/DOM, capture console/network logs, and more. ~100ms per command after
   first call. Use when you need to check a website, verify a deployment, read docs,
@@ -13,42 +13,55 @@ allowed-tools:
 
 ---
 
-# gstack: Persistent Browser for Claude Code
+# gstack: Persistent Browser for Cursor
 
 Persistent headless Chromium daemon. First call auto-starts the server (~3s).
 Every subsequent call: ~100-200ms. Auto-shuts down after 30 min idle.
 
 ## SETUP (run this check BEFORE any browse command)
 
-Before using any browse command, find the skill and check if the binary exists:
+Before using any browse command, locate the gstack checkout and check whether the
+compiled browser binary already exists:
 
 ```bash
-# Check project-level first, then user-level
-if test -x .claude/skills/gstack/browse/dist/browse; then
-  echo "READY_PROJECT"
-elif test -x ~/.claude/skills/gstack/browse/dist/browse; then
-  echo "READY_USER"
+# Prefer the current repo, then Cursor local plugins, then legacy Claude installs.
+GSTACK_DIR=""
+for d in "$PWD" "$HOME/.cursor/plugins/local/gstack" "$HOME/.claude/skills/gstack"; do
+  if test -f "$d/package.json" && test -f "$d/browse/src/server.ts"; then
+    GSTACK_DIR="$d"
+    break
+  fi
+done
+
+if test -n "$GSTACK_DIR" && test -x "$GSTACK_DIR/browse/dist/browse"; then
+  echo "READY:$GSTACK_DIR"
+elif test -n "$GSTACK_DIR"; then
+  echo "NEEDS_SETUP:$GSTACK_DIR"
 else
-  echo "NEEDS_SETUP"
+  echo "MISSING_GSTACK"
 fi
 ```
 
-Set `B` to whichever path is READY and use it for all commands. Prefer project-level if both exist.
+Set `GSTACK_DIR` from the output and then set `B="$GSTACK_DIR/browse/dist/browse"`.
 
-If `NEEDS_SETUP`:
+If the output is `NEEDS_SETUP:<path>`:
 1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait for their response.
-2. If they approve, determine the skill directory (project-level `.claude/skills/gstack` or user-level `~/.claude/skills/gstack`) and run:
+2. If they approve, run:
 ```bash
-cd <SKILL_DIR> && ./setup
+cd <GSTACK_DIR> && ./setup
 ```
 3. If `bun` is not installed, tell the user to install it: `curl -fsSL https://bun.sh/install | bash`
-4. Verify the `.gitignore` in the skill directory contains `browse/dist/` and `node_modules/`. If either line is missing, add it.
+4. Verify the repo `.gitignore` contains `browse/dist/` and `node_modules/`. If either line is missing, add it.
+
+If the output is `MISSING_GSTACK`:
+1. Tell the user gstack is not installed in the workspace or Cursor local plugin directory.
+2. Ask them to install this repo as a local Cursor plugin at `~/.cursor/plugins/local/gstack` or open the gstack repo directly.
 
 Once setup is done, it never needs to run again (the compiled binary persists).
 
 ## IMPORTANT
 
-- Use the compiled binary via Bash: `.claude/skills/gstack/browse/dist/browse` (project) or `~/.claude/skills/gstack/browse/dist/browse` (user).
+- Use the compiled binary via Bash: `"$GSTACK_DIR/browse/dist/browse"`.
 - NEVER use `mcp__claude-in-chrome__*` tools. They are slow and unreliable.
 - The browser persists between calls — cookies, tabs, and state carry over.
 - The server auto-starts on first command. No setup needed.
@@ -56,7 +69,8 @@ Once setup is done, it never needs to run again (the compiled binary persists).
 ## Quick Reference
 
 ```bash
-B=~/.claude/skills/gstack/browse/dist/browse
+GSTACK_DIR=~/.cursor/plugins/local/gstack
+B="$GSTACK_DIR/browse/dist/browse"
 
 # Navigate to a page
 $B goto https://example.com

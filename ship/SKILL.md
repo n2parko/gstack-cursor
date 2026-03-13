@@ -145,7 +145,7 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 
 Review the diff for structural issues that tests don't catch.
 
-1. Read `.claude/skills/review/checklist.md`. If the file cannot be read, **STOP** and report the error.
+1. Use the embedded checklist in the `## Embedded Pre-Landing Review Checklist` section below.
 
 2. Run `git diff origin/main` to get the full diff (scoped to feature changes against the freshly-fetched remote main).
 
@@ -279,7 +279,7 @@ gh pr create --title "<type>: <summary>" --body "$(cat <<'EOF'
 - [x] All Rails tests pass (N runs, 0 failures)
 - [x] All Vitest tests pass (N tests)
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🤖 Generated with [Cursor](https://cursor.com) + gstack
 EOF
 )"
 ```
@@ -291,10 +291,111 @@ EOF
 ## Important Rules
 
 - **Never skip tests.** If tests fail, stop.
-- **Never skip the pre-landing review.** If checklist.md is unreadable, stop.
+- **Never skip the pre-landing review.** Use the embedded checklist below.
 - **Never force push.** Use regular `git push` only.
 - **Never ask for confirmation** except for MINOR/MAJOR version bumps and CRITICAL review findings (one AskUserQuestion per critical issue with fix recommendation).
 - **Always use the 4-digit version format** from the VERSION file.
 - **Date format in CHANGELOG:** `YYYY-MM-DD`
 - **Split commits for bisectability** — each commit = one logical change.
 - **The goal is: user says `/ship`, next thing they see is the review + PR URL.**
+
+---
+
+## Embedded Pre-Landing Review Checklist
+
+Review the `git diff origin/main` output for the issues listed below. Be specific — cite `file:line` and suggest fixes. Skip anything that's fine. Only flag real problems.
+
+**Two-pass review:**
+- **Pass 1 (CRITICAL):** Run SQL & Data Safety and LLM Output Trust Boundary first. These can block `/ship`.
+- **Pass 2 (INFORMATIONAL):** Run all remaining categories. These are included in the PR body but do not block.
+
+**Output format:**
+
+```text
+Pre-Landing Review: N issues (X critical, Y informational)
+
+**CRITICAL** (blocking /ship):
+- [file:line] Problem description
+  Fix: suggested fix
+
+**Issues** (non-blocking):
+- [file:line] Problem description
+  Fix: suggested fix
+```
+
+If no issues found: `Pre-Landing Review: No issues found.`
+
+### Pass 1 — CRITICAL
+
+#### SQL & Data Safety
+- String interpolation in SQL (even if values are `.to_i`/`.to_f` — use `sanitize_sql_array` or Arel)
+- TOCTOU races: check-then-set patterns that should be atomic `WHERE` + `update_all`
+- `update_column`/`update_columns` bypassing validations on fields that have or should have constraints
+- N+1 queries: `.includes()` missing for associations used in loops/views (especially avatar, attachments)
+
+#### Race Conditions & Concurrency
+- Read-check-write without uniqueness constraint or `rescue RecordNotUnique; retry`
+- `find_or_create_by` on columns without unique DB index
+- Status transitions that do not use atomic `WHERE old_status = ? UPDATE SET new_status`
+- `html_safe` on user-controlled data (XSS)
+
+#### LLM Output Trust Boundary
+- LLM-generated values written to DB or passed to mailers without format validation
+- Structured tool output accepted without type/shape checks before database writes
+
+### Pass 2 — INFORMATIONAL
+
+#### Conditional Side Effects
+- Code paths that branch on a condition but forget to apply a side effect on one branch
+- Log messages that claim an action happened but the action was conditionally skipped
+
+#### Magic Numbers & String Coupling
+- Bare numeric literals used in multiple files
+- Error message strings used as query filters elsewhere
+
+#### Dead Code & Consistency
+- Variables assigned but never read
+- Version mismatch between PR title and VERSION/CHANGELOG files
+- CHANGELOG entries that describe changes inaccurately
+- Comments/docstrings that describe old behavior after the code changed
+
+#### LLM Prompt Issues
+- 0-indexed lists in prompts
+- Prompt text listing tools/capabilities that do not match what is actually wired up
+- Word/token limits stated in multiple places that could drift
+
+#### Test Gaps
+- Negative-path tests that assert side effects incompletely
+- Assertions on string content without checking format
+- Missing explicit "never call" assertions on external services
+- Security enforcement features without integration tests verifying the enforcement path works end-to-end
+
+#### Crypto & Entropy
+- Truncation instead of hashing
+- `rand()` / `Random.rand` for security-sensitive values
+- Non-constant-time comparisons on secrets or tokens
+
+#### Time Window Safety
+- Date-key lookups that assume "today" covers 24h
+- Mismatched time windows between related features
+
+#### Type Coercion at Boundaries
+- Values crossing Ruby→JSON→JS boundaries without normalization
+- Hash/digest inputs that do not normalize types before serialization
+
+#### View/Frontend
+- Inline `<style>` blocks in partials
+- O(n*m) lookups in views
+- Ruby-side `.select{}` filtering on DB results that should be a `WHERE` clause
+
+### Suppressions — DO NOT flag these
+
+- Harmless readability redundancy
+- Comment-only threshold explanations
+- Assertions that already cover the behavior
+- Consistency-only changes with no behavioral impact
+- Regex edge cases that cannot happen in practice
+- Tests that intentionally exercise multiple guards simultaneously
+- Eval threshold tuning changes
+- Harmless no-ops
+- Anything already addressed in the diff being reviewed

@@ -13,7 +13,7 @@ allowed-tools:
 
 # /retro — Weekly Engineering Retrospective
 
-Generates a comprehensive engineering retrospective analyzing commit history, work patterns, and code quality metrics. Designed for a senior IC/CTO-level builder using Claude Code as a force multiplier.
+Generates a comprehensive engineering retrospective analyzing commit history, work patterns, and code quality metrics. Designed for a senior IC/CTO-level builder using AI coding agents as a force multiplier.
 
 ## User-invocable
 When the user types `/retro`, run this skill.
